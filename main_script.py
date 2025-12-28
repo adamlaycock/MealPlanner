@@ -10,6 +10,8 @@ def build_list(ids: list) -> pd.DataFrame:
         filt_ingreds_df.value_counts()
     ).reset_index()
     ingreds['count'] = ('x' + ingreds['count'].astype(str)).replace('x1', '')
+    ingreds.columns = ['ingredient', 'occurrences']
+    ingreds = ingreds.sort_values(by='ingredient')
 
     return(ingreds)
 
