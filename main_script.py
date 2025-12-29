@@ -1,4 +1,5 @@
 import pandas as pd
+from collections import defaultdict
 
 INGREDS_DF = pd.read_csv(
     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\ingredients.csv'
@@ -53,3 +54,12 @@ def remove_recipe(name:str):
     #     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\ingredients.csv',
     #     index=False
     # )
+
+def find_recipes(search_ingredients: list):
+    search_set = set(search_ingredients)
+    recipe_groups = INGREDS_DF.groupby('ID')['Ingredient'].apply(set)
+
+    matches = recipe_groups[recipe_groups.apply(search_set.issubset)].index.tolist()
+    selected_recipes = list(RECIPE_DF[RECIPE_DF['ID'].isin(matches)]['Name'])
+
+    return selected_recipes
