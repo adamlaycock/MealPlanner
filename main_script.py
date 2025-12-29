@@ -44,3 +44,12 @@ def remove_recipe(name:str):
     remove_id = RECIPE_DF.loc[RECIPE_DF['Name'] == name, 'ID'].iloc[0]
     RECIPE_DF = RECIPE_DF[RECIPE_DF['ID'] != remove_id]
     INGREDS_DF = INGREDS_DF[INGREDS_DF['ID'] != remove_id]
+
+    # RECIPE_DF.to_csv(
+    #     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\recipes.csv',
+    #     index=False
+    # )
+    # INGREDS_DF.to_csv(
+    #     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\ingredients.csv',
+    #     index=False
+    # )
