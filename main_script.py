@@ -68,7 +68,7 @@ def add_recipe(name: str, link: str, ingredients: list):
     )
     
     confirmation = input(
-        f'Add {name}? (Y/N):'
+        f'Add "{name}"? (Y/N):'
     ).strip().upper()
     
     if confirmation == 'Y':
