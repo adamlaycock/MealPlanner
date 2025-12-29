@@ -1,5 +1,6 @@
 import pandas as pd
 from collections import defaultdict
+import sqlite3
 
 INGREDS_DF = pd.read_csv(
     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\ingredients.csv'
@@ -63,3 +64,15 @@ def find_recipes(search_ingredients: list):
     selected_recipes = list(RECIPE_DF[RECIPE_DF['ID'].isin(matches)]['Name'])
 
     return selected_recipes
+
+
+
+
+
+
+
+def add_recipe(name: str, link: str, ingredients: list):
+    conn = sqlite3.connect('meal_planner.db')
+    cur = conn.cursor()
+
+    ingredients = [i.lower() for i in ingredients]
