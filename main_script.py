@@ -37,3 +37,10 @@ def add_recipe(name: str, link: str, ingreds: list):
     #     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\ingredients.csv',
     #     index=False
     # )
+
+def remove_recipe(name:str):
+    global RECIPE_DF, INGREDS_DF
+
+    remove_id = RECIPE_DF.loc[RECIPE_DF['Name'] == name, 'ID'].iloc[0]
+    RECIPE_DF = RECIPE_DF[RECIPE_DF['ID'] != remove_id]
+    INGREDS_DF = INGREDS_DF[INGREDS_DF['ID'] != remove_id]
