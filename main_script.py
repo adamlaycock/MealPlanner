@@ -2,13 +2,13 @@ import pandas as pd
 from collections import defaultdict
 import sqlite3
 
-INGREDS_DF = pd.read_csv(
-    r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\ingredients.csv'
-)
+# INGREDS_DF = pd.read_csv(
+#     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\ingredients.csv'
+# )
 
-RECIPE_DF = pd.read_csv(
-    r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\recipes.csv'
-)
+# RECIPE_DF = pd.read_csv(
+#     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\recipes.csv'
+# )
 
 def build_list(ids: list) -> pd.DataFrame:
     filt_ingreds_df = INGREDS_DF[INGREDS_DF['ID'].isin(ids)]['Ingredient']
@@ -76,3 +76,30 @@ def add_recipe(name: str, link: str, ingredients: list):
     cur = conn.cursor()
 
     ingredients = [i.lower() for i in ingredients]
+
+    cur.execute('INSERT INTO recipes (name, link) VALUES (?, ?)', (name, link))
+    new_id = cur.lastrowid
+    
+    ingredient_data = [(i.lower(), new_id) for i in ingredients]
+    cur.executemany(
+        'INSERT INTO ingredients (ingredient, recipe_id) VALUES (?, ?)', 
+        ingredient_data
+    )
+    
+    confirmation = input(
+        f'Add {name}? (Y/N):'
+    ).strip().upper()
+    
+    if confirmation == 'Y':
+        #conn.commit()
+        print(f'Successfully saved "{name}"')
+    else:
+        print(f'"{name}" was not added.')
+
+    for row in cur.execute('SELECT * FROM ingredients'):
+        print(row)
+
+    conn.close()
+
+
+add_recipe('test','test_link', ['test3', 'test4'])
