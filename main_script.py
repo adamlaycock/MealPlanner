@@ -55,8 +55,10 @@ def find_recipes(search_ingredients: list):
 def add_recipe(name: str, link: str, ingredients: list):
     conn = sqlite3.connect('meal_planner.db')
     cur = conn.cursor()
+    cur.execute("PRAGMA foreign_keys = ON;")
 
     ingredients = [i.lower() for i in ingredients]
+    name = name.lower()
 
     cur.execute('INSERT INTO recipes (name, link) VALUES (?, ?)', (name, link))
     new_id = cur.lastrowid
@@ -77,10 +79,21 @@ def add_recipe(name: str, link: str, ingredients: list):
     else:
         print(f'"{name}" was not added.')
 
-    for row in cur.execute('SELECT * FROM ingredients'):
-        print(row)
-
     conn.close()
 
+def remove_recipe(name: str):
+    conn = sqlite3.connect('meal_planner.db')
+    cur = conn.cursor()
+    cur.execute("PRAGMA foreign_keys = ON;")
 
-add_recipe('test','test_link', ['test3', 'test4'])
+    cur.execute('DELETE FROM recipes WHERE name=?', (name,))
+
+    confirmation = input(
+    f'Remove "{name}"? (Y/N):'
+    ).strip().upper()
+
+    if confirmation == 'Y':
+        #conn.commit()
+        print(f'Successfully removed "{name}"')
+    else:
+        print(f'"{name}" was not removed.')
