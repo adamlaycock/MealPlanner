@@ -2,14 +2,6 @@ import pandas as pd
 from collections import defaultdict
 import sqlite3
 
-# INGREDS_DF = pd.read_csv(
-#     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\ingredients.csv'
-# )
-
-# RECIPE_DF = pd.read_csv(
-#     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\recipes.csv'
-# )
-
 def build_list(ids: list) -> pd.DataFrame:
     filt_ingreds_df = INGREDS_DF[INGREDS_DF['ID'].isin(ids)]['Ingredient']
     ingreds = pd.DataFrame(
@@ -20,22 +12,6 @@ def build_list(ids: list) -> pd.DataFrame:
     ingreds = ingreds.sort_values(by='ingredient')
 
     return(ingreds)
-
-def remove_recipe(name:str):
-    global RECIPE_DF, INGREDS_DF
-
-    remove_id = RECIPE_DF.loc[RECIPE_DF['Name'] == name, 'ID'].iloc[0]
-    RECIPE_DF = RECIPE_DF[RECIPE_DF['ID'] != remove_id]
-    INGREDS_DF = INGREDS_DF[INGREDS_DF['ID'] != remove_id]
-
-    # RECIPE_DF.to_csv(
-    #     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\recipes.csv',
-    #     index=False
-    # )
-    # INGREDS_DF.to_csv(
-    #     r'C:\Users\adamm\OneDrive\Documents\R&D\MealPlanner\ingredients.csv',
-    #     index=False
-    # )
 
 def find_recipes(search_ingredients: list):
     search_set = set(search_ingredients)
@@ -97,3 +73,24 @@ def remove_recipe(name: str):
         print(f'Successfully removed "{name}"')
     else:
         print(f'"{name}" was not removed.')
+
+    conn.close()
+
+def build_list(names: list):
+    conn = sqlite3.connect('meal_planner.db')
+    cur = conn.cursor()
+    cur.execute("PRAGMA foreign_keys = ON;")
+
+    placeholders = ', '.join(['?'] * len(names))
+    query = f"""
+        SELECT ingredients.ingredient FROM recipes
+        JOIN ingredients on RECIPES.id = ingredients.recipe_id
+        WHERE name in ({placeholders})
+    """
+    res = cur.execute(query, names)
+
+    # Temporary debug
+    for row in res:
+        print(row[0])
+    
+    conn.close()
