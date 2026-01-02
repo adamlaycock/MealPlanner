@@ -73,8 +73,8 @@ def build_list(names: list):
     placeholders = ', '.join(['?'] * len(names))
     query = f"""
         SELECT ingredients.ingredient FROM recipes
-        JOIN ingredients on RECIPES.id = ingredients.recipe_id
-        WHERE name in ({placeholders})
+        JOIN ingredients ON recipes.id = ingredients.recipe_id
+        WHERE name IN ({placeholders})
     """
     res = pd.DataFrame(
         pd.DataFrame(
@@ -90,4 +90,21 @@ def build_list(names: list):
     
     return shopping_list
 
-build_list(['Chicken & Chorizo Paella', 'Fajitas', 'Chicken & Chorizo Pasta'])
+def find_recipes(ingredients: list):
+    conn = sqlite3.connect('meal_planner.db')
+    cur = conn.cursor()
+    cur.execute("PRAGMA foreign_keys = ON;")
+
+    placeholders = ', '.join(['?'] * len(ingredients))
+    query = f"""
+        SELECT recipes.name FROM recipes
+        JOIN ingredients ON recipes.id = ingredients.recipe_id
+        WHERE ingredients.ingredient IN ({placeholders})
+    """
+
+    res = cur.execute(query, ingredients).fetchall()
+    print(res)
+
+    conn.close()
+
+find_recipes(['white onions'])
