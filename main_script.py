@@ -2,17 +2,6 @@ import pandas as pd
 from collections import defaultdict
 import sqlite3
 
-def build_list(ids: list) -> pd.DataFrame:
-    filt_ingreds_df = INGREDS_DF[INGREDS_DF['ID'].isin(ids)]['Ingredient']
-    ingreds = pd.DataFrame(
-        filt_ingreds_df.value_counts()
-    ).reset_index()
-    ingreds['count'] = ('x' + ingreds['count'].astype(str)).replace('x1', '')
-    ingreds.columns = ['ingredient', 'occurrences']
-    ingreds = ingreds.sort_values(by='ingredient')
-
-    return(ingreds)
-
 def find_recipes(search_ingredients: list):
     search_set = set(search_ingredients)
     recipe_groups = INGREDS_DF.groupby('ID')['Ingredient'].apply(set)
@@ -87,10 +76,18 @@ def build_list(names: list):
         JOIN ingredients on RECIPES.id = ingredients.recipe_id
         WHERE name in ({placeholders})
     """
-    res = cur.execute(query, names)
+    res = pd.DataFrame(
+        pd.DataFrame(
+            cur.execute(query, names)
+        ).value_counts()
+    ).reset_index().sort_values(by=0)
 
-    # Temporary debug
-    for row in res:
-        print(row[0])
-    
+    shopping_list = (
+        res[0].str.title() + ' x' + res['count'].astype(str)
+    ).str.replace('x1', '')
+
     conn.close()
+    
+    return shopping_list
+
+build_list(['Chicken & Chorizo Paella', 'Fajitas', 'Chicken & Chorizo Pasta'])
