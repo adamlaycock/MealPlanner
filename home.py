@@ -17,9 +17,6 @@ if 'ingredient_list' not in st.session_state:
     """).fetchall()
     st.session_state.ingredient_list = [row[0] for row in raw_data]
 
-if 'recipe_basket' not in st.session_state:
-    st.session_state.recipe_basket = []
-
 conn.close()
 
 st.title('Meal Planner')
