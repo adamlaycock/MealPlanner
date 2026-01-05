@@ -12,7 +12,7 @@ with tab1:
     link = st.text_input('Enter Recipe Link (If Applicable):')
 
     st.subheader('Ingredients')
-    options = [''] + st.session_state.ingredient_list + ['Add new ingredient...']
+    options = st.session_state.ingredient_list + ['Add new ingredient...']
     selected_item = st.selectbox(
         'Search or Select Ingredient',
         options=options,
