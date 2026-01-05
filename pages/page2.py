@@ -12,12 +12,13 @@ with tab1:
     link = st.text_input('Enter Recipe Link (If Applicable):')
 
     st.subheader('Ingredients')
-    options = st.session_state.ingredient_list + ['Add new ingredient...']
+    options = [''] + st.session_state.ingredient_list + ['Add new ingredient...']
     selected_item = st.selectbox(
         'Search or Select Ingredient',
         options=options,
         index=0,
-        key='ingredient_selector'
+        key='ingredient_selector',
+        
     )
 
     if selected_item == 'Add new ingredient...':
@@ -27,6 +28,7 @@ with tab1:
                 st.session_state.ingredient_list.append(new_ingred)
                 st.session_state.recipe_basket.append(new_ingred)
                 st.success(f'Added {new_ingred}!')
+                st.session_state.ingredient_selector = ''
                 st.rerun()
 
     elif selected_item and selected_item != '':
@@ -40,4 +42,5 @@ with tab1:
 
     if st.button('Clear Basket'):
         st.session_state.recipe_basket = []
+        
         st.rerun()
