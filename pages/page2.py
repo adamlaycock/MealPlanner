@@ -8,7 +8,7 @@ def get_all_recipes() -> list:
     cur.execute('PRAGMA foreign_keys = ON;')
 
     recipes = cur.execute("""
-        SELECT recipe FROM recipes
+        SELECT name FROM recipes
     """).fetchall()
 
     conn.close()
@@ -89,11 +89,11 @@ def remove_from_db(name) -> True:
     return True
 
 
-def build_ingredient_selector(selections=[]):
+def build_ingredient_selector(mode):
     if 'ingredient_list' not in st.session_state:
         st.session_state.ingredient_list = get_all_ingredients()
     if 'ingredient_selections' not in st.session_state:
-        st.session_state.ingredient_selections = selections
+        st.session_state.ingredient_selections = []
     if 'ready_to_save' not in st.session_state:
         st.session_state.ready_to_save = False
 
@@ -101,7 +101,7 @@ def build_ingredient_selector(selections=[]):
     selected_item = st.selectbox(
         'Search or Select Ingredient:',
         options=options,
-        key='ingredient_selector',
+        key=f'ingredient_selector_{mode}',
         index=None
     )
 
@@ -115,7 +115,7 @@ def build_ingredient_selector(selections=[]):
                 st.rerun()
 
     elif selected_item and selected_item != '':
-        if st.button(f'Add {selected_item} to Recipe'):
+        if st.button(f'Add {selected_item} to Recipe', key=f'add_btn_{mode}'):
             if selected_item not in st.session_state.ingredient_selections:
                 st.session_state.ingredient_selections.append(selected_item)
                 st.toast(f'{selected_item} added!')
@@ -124,20 +124,20 @@ def build_ingredient_selector(selections=[]):
         st.write(f'- {ingred}')
 
     if st.session_state.ingredient_selections:
-        if st.button('Clear Selections'):
+        if st.button('Clear Selections', key=f'clear_btn_{mode}'):
             st.session_state.ingredient_selections = []
             st.session_state.ready_to_save = False
             st.rerun()
 
-    if st.button('Save Recipe'):
+    if st.button('Save Recipe', key=f'save_btn_{mode}'):
         if not st.session_state.ingredient_selections:
             st.error('Please provide ingredients!')
         else:
             st.session_state.ready_to_save = True
 
-def build_authenticator() -> bool:
+def build_authenticator(mode) -> bool:
         st.info('Authentication required to modify the database.')
-        pwd = st.text_input('Enter Database Password:', type='password', key='pwd_field')
+        pwd = st.text_input('Enter Database Password:', type='password', key=f'pwd_field_{mode}')
         
         if pwd == st.secrets['db_pwd']:
             return True
@@ -146,27 +146,34 @@ def build_authenticator() -> bool:
             return False
         
 @st.dialog('Confirm Action')
-def confirm_dialog(name, link, ingredients):
+def confirm_dialog(name, link, ingredients, mode):
     st.write(
-        f'Are you sure you want to save **{name}** with {len(ingredients)} ingredients?'
+        f'Are you sure you want to {mode} **{name}** with {len(ingredients)} ingredients?'
     )
     
     col1, col2 = st.columns(2)
     if col1.button('Confirm and Save'):
+        if mode == 'edit':
+            remove_from_db(name)
         if add_to_db(name, link, ingredients):
             st.success('Recipe saved successfully!')
             time.sleep(2)
-            reset_session_state()
+            reset_session_state(mode)
             st.rerun()
             
     if col2.button('Cancel'):
-        reset_session_state()
+        reset_session_state(mode)
         st.rerun()
 
-def reset_session_state():
-    st.session_state.name_input = ''
-    st.session_state.link_input = ''
-    st.session_state.ingredient_selector = None
+def reset_session_state(mode):
+    if mode == 'add':
+        st.session_state.name_input_add = ''
+        st.session_state.link_input_add = ''
+        st.session_state.ingredient_selector_add = None
+    if mode == 'edit':
+        st.session_state.name_input_edit = ''
+        st.session_state.link_input_edit = ''
+        st.session_state.ingredient_selector_edit = None
     st.session_state.ingredient_selections = []
     st.session_state.ready_to_save = False
         
@@ -178,13 +185,31 @@ with tab1:
     st.header('Add Recipe')
 
     st.subheader('Name & Link')
-    name = st.text_input('Enter Recipe Name:', key='name_input')
-    link = st.text_input('Enter Recipe Link (If Applicable):', key='link_input')
+    name = st.text_input('Enter Recipe Name:', key='name_input_add')
+    link = st.text_input('Enter Recipe Link (If Applicable):', key='link_input_add')
 
     st.subheader('Ingredients')
-    build_ingredient_selector()
+    build_ingredient_selector('add')
 
     if st.session_state.ready_to_save and name:
         st.subheader('Authentication')
-        if build_authenticator() and name:
-            confirm_dialog(name, link, st.session_state.ingredient_selections)
+        if build_authenticator('add') and name:
+            confirm_dialog(name, link, st.session_state.ingredient_selections, 'add')
+
+with tab2:
+    st.header('Edit Recipe')
+    name = st.selectbox(
+        'Select Existing Recipe:',
+        options=get_all_recipes(),
+        index=None,
+        key='name_input_edit'
+    )
+
+    if name:
+        ingredients, link = get_recipe_info(name)
+        build_ingredient_selector('edit')
+
+        if st.session_state.ready_to_save and name:
+            st.subheader('Authentication')
+            if build_authenticator('edit') and name:
+                confirm_dialog(name, link, st.session_state.ingredient_selections, 'edit')
