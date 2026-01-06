@@ -171,7 +171,7 @@ def reset_session_state(mode):
         st.session_state.link_input_add = ''
         st.session_state.ingredient_selector_add = None
     if mode == 'edit':
-        st.session_state.name_input_edit = ''
+        st.session_state.name_input_edit = None
         st.session_state.link_input_edit = ''
         st.session_state.ingredient_selector_edit = None
     st.session_state.ingredient_selections = []
