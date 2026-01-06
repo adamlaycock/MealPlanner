@@ -138,6 +138,10 @@ def build_ingredient_selector(mode):
 def build_authenticator(mode) -> bool:
         st.info('Authentication required to modify the database.')
         pwd = st.text_input('Enter Database Password:', type='password', key=f'pwd_field_{mode}')
+
+        if st.button('Cancel Save', key=f'cancel_btn_{mode}'):
+            st.session_state.ready_to_save = False
+            st.rerun()
         
         if pwd == st.secrets['db_pwd']:
             return True
