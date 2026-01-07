@@ -50,7 +50,6 @@ def get_recipe_info(recipe: str) -> tuple[list, str]:
     else:
         return [], None
 
-
 def add_to_db(name, link, ingredients) -> True:
     conn = sqlite3.connect('meal_planner.db')
     cur = conn.cursor()
@@ -87,7 +86,6 @@ def remove_from_db(name) -> True:
     conn.close()
 
     return True
-
 
 def build_ingredient_selector(mode):
     if 'ingredient_list' not in st.session_state:
@@ -139,8 +137,9 @@ def build_authenticator(mode) -> bool:
         st.info('Authentication required to modify the database.')
         pwd = st.text_input('Enter Database Password:', type='password', key=f'pwd_field_{mode}')
 
-        if st.button('Cancel Save', key=f'cancel_btn_{mode}'):
+        if st.button('Cancel', key=f'cancel_btn_{mode}'):
             st.session_state.ready_to_save = False
+            st.session_state.ready_to_del = False
             st.rerun()
         
         if pwd == st.secrets['db_pwd']:
@@ -148,6 +147,16 @@ def build_authenticator(mode) -> bool:
         elif pwd:
             st.error('Incorrect Password')
             return False
+        
+def build_recipe_selector(mode:str):
+    name = st.selectbox(
+        'Select Existing Recipe:',
+        options=get_all_recipes(),
+        index=None,
+        key=f'name_input_{mode}'
+    )
+
+    return name
         
 @st.dialog('Confirm Action')
 def confirm_dialog(name, link, ingredients, mode):
@@ -157,13 +166,17 @@ def confirm_dialog(name, link, ingredients, mode):
     
     col1, col2 = st.columns(2)
     if col1.button('Confirm and Save'):
+        if mode == 'add':
+            add_to_db(name, link, ingredients)
         if mode == 'edit':
             remove_from_db(name)
-        if add_to_db(name, link, ingredients):
-            st.success('Recipe saved successfully!')
-            time.sleep(2)
-            reset_session_state(mode)
-            st.rerun()
+            add_to_db(name, link, ingredients)
+        if mode == 'delete':
+            remove_from_db(name)
+        st.success('Action successful!')
+        time.sleep(2)
+        reset_session_state(mode)
+        st.rerun()
             
     if col2.button('Cancel'):
         reset_session_state(mode)
@@ -174,14 +187,18 @@ def reset_session_state(mode):
         st.session_state.name_input_add = ''
         st.session_state.link_input_add = ''
         st.session_state.ingredient_selector_add = None
+        st.session_state.ingredient_selections = []
+        st.session_state.ready_to_save = False
     if mode == 'edit':
         st.session_state.name_input_edit = None
-        st.session_state.link_input_edit = ''
         st.session_state.ingredient_selector_edit = None
-    st.session_state.ingredient_selections = []
-    st.session_state.ready_to_save = False
+        st.session_state.ingredient_selections = []
+        st.session_state.ready_to_save = False
+    if mode == 'delete':
+        st.session_state.name_input_delete = None
+        st.session_state.ready_to_del = False
         
-st.title('Add, Edit, or Remove Recipes')
+st.title('Add, Edit, or Delete Recipes')
 
 tab1, tab2, tab3 = st.tabs(['Add', 'Edit', 'Remove'])
 
@@ -198,22 +215,42 @@ with tab1:
     if st.session_state.ready_to_save and name:
         st.subheader('Authentication')
         if build_authenticator('add') and name:
-            confirm_dialog(name, link, st.session_state.ingredient_selections, 'add')
+            confirm_dialog(
+                name, 
+                link, 
+                st.session_state.ingredient_selections, 
+                'add'
+            )
 
 with tab2:
     st.header('Edit Recipe')
-    name = st.selectbox(
-        'Select Existing Recipe:',
-        options=get_all_recipes(),
-        index=None,
-        key='name_input_edit'
-    )
+    name = build_recipe_selector('edit')
 
     if name:
         ingredients, link = get_recipe_info(name)
         build_ingredient_selector('edit')
-
         if st.session_state.ready_to_save and name:
             st.subheader('Authentication')
             if build_authenticator('edit') and name:
-                confirm_dialog(name, link, st.session_state.ingredient_selections, 'edit')
+                confirm_dialog(
+                    name,
+                    link, 
+                    st.session_state.ingredient_selections, 
+                    'edit'
+                )
+
+with tab3:
+    if 'ready_to_del' not in st.session_state:
+        st.session_state.ready_to_del = False
+
+    st.header('Delete Recipe')
+    name = build_recipe_selector('delete')
+
+    if name:
+        ingredients, link = get_recipe_info(name)
+        if st.button('Delete Recipe'):
+            st.session_state.ready_to_del = True
+        if st.session_state.ready_to_del and name:
+            st.subheader('Authentication')
+            if build_authenticator('edit') and name:
+                confirm_dialog(name, link, ingredients, 'delete')
