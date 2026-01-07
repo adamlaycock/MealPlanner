@@ -28,7 +28,7 @@ def get_all_ingredients() -> list:
     cur.execute('PRAGMA foreign_keys = ON;')
 
     ingredients = cur.execute("""
-        SELECT ingredient FROM ingredients
+        SELECT DISTINCT ingredient FROM ingredients
     """).fetchall()
 
     conn.close()
