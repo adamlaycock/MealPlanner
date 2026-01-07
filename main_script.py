@@ -97,14 +97,15 @@ def find_recipes(ingredients: list):
 
     placeholders = ', '.join(['?'] * len(ingredients))
     query = f"""
-        SELECT recipes.name FROM recipes
-        JOIN ingredients ON recipes.id = ingredients.recipe_id
-        WHERE ingredients.ingredient IN ({placeholders})
+            SELECT recipes.name FROM recipes
+            JOIN ingredients ON recipes.id = ingredients.recipe_id
+            WHERE ingredients.ingredient IN ({placeholders})
+            GROUP BY recipes.name
+            HAVING COUNT(DISTINCT ingredients.ingredient) = ?
     """
 
-    res = cur.execute(query, ingredients).fetchall()
+    params = ingredients + [len(ingredients)]
+    res = [row[0] for row in cur.execute(query, params).fetchall()]
     print(res)
 
     conn.close()
-
-find_recipes(['white onions'])

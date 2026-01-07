@@ -200,7 +200,7 @@ def reset_session_state(mode):
         
 st.title('Add, Edit, or Delete Recipes')
 
-tab1, tab2, tab3 = st.tabs(['Add', 'Edit', 'Remove'])
+tab1, tab2, tab3 = st.tabs(['Add', 'Edit', 'Delete'])
 
 with tab1:
     st.header('Add Recipe')
