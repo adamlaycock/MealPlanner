@@ -67,7 +67,7 @@ def add_to_db(name, link, ingredients) -> True:
         ingredient_data
     )
     
-    #conn.commit()
+    conn.commit()
     conn.close()
 
     return True
@@ -82,7 +82,7 @@ def remove_from_db(name) -> True:
         (name,)
     )
 
-    #conn.commit()
+    conn.commit()
     conn.close()
 
     return True
@@ -174,7 +174,7 @@ def confirm_dialog(name, link, ingredients, mode):
         if mode == 'delete':
             remove_from_db(name)
         st.success('Action successful!')
-        time.sleep(2)
+        time.sleep(1)
         reset_session_state(mode)
         st.rerun()
             
