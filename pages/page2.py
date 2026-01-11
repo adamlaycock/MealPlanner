@@ -13,7 +13,7 @@ def get_all_recipes() -> list:
 
     conn.close()
     
-    return [row[0] for row in recipes]
+    return [row[0].title() for row in recipes]
 
 def get_all_ingredients() -> list:
     conn = sqlite3.connect('meal_planner.db')
@@ -26,7 +26,7 @@ def get_all_ingredients() -> list:
 
     conn.close()
     
-    return [row[0] for row in ingredients]
+    return [row[0].title() for row in ingredients]
 
 def get_recipe_info(recipe: str) -> tuple[list, str]:
     conn = sqlite3.connect('meal_planner.db')
@@ -46,7 +46,7 @@ def get_recipe_info(recipe: str) -> tuple[list, str]:
     conn.close()
     
     if res:
-        return [row[0] for row in res], res[0][1]
+        return [row[0].title() for row in res], res[0][1]
     else:
         return [], None
 
@@ -79,7 +79,7 @@ def remove_from_db(name) -> True:
 
     cur.execute(
         'DELETE FROM recipes WHERE name=?', 
-        (name,)
+        (name.lower(),)
     )
 
     conn.commit()

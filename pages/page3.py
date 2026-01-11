@@ -43,7 +43,7 @@ def get_all_recipes() -> list:
 
     conn.close()
     
-    return [row[0] for row in recipes]
+    return [row[0].title() for row in recipes]
 
 
 st.title('Meal Planner & Shopping List')
@@ -59,7 +59,7 @@ for day in DAYS:
 
 if st.button('Submit Recipes', key='submit_btn'):
     selected_recipes = [
-        st.session_state[f'recipe_selector_{day}'] 
+        st.session_state[f'recipe_selector_{day}'].lower() 
         for day in DAYS 
         if st.session_state[f'recipe_selector_{day}'] is not None
     ]
