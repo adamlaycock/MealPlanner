@@ -63,5 +63,13 @@ if st.button('Submit Recipes', key='submit_btn'):
         for day in DAYS 
         if st.session_state[f'recipe_selector_{day}'] is not None
     ]
-    st.header('Shopping List')
-    st.write(build_list(selected_recipes))
+
+    if selected_recipes:
+            st.header('Shopping List')
+            items = build_list(selected_recipes)
+            
+            clean_list = "\n".join(items.tolist())
+            
+            st.code(clean_list, language=None)
+    else:
+        st.warning("Please select at least one recipe first!")
