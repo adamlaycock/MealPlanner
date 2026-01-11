@@ -2,11 +2,6 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
-DAYS = [
-    'Monday', 'Tuesday', 'Wednesday', 
-    'Thursday', 'Friday', 'Saturday', 'Sunday'
-]
-
 def build_list(names: list):
     conn = sqlite3.connect('meal_planner.db')
     cur = conn.cursor()
@@ -49,27 +44,15 @@ def get_all_recipes() -> list:
 st.title('Meal Planner & Shopping List')
 st.header('Meal Planner')
 
-for day in DAYS:
-    st.selectbox(
-        f'Recipe for {day}:',
-        options=get_all_recipes(),
-        index=None,
-        key=f'recipe_selector_{day}'
-    )
+selections = st.multiselect('Select Recipes:', options=get_all_recipes())
 
 if st.button('Submit Recipes', key='submit_btn'):
-    selected_recipes = [
-        st.session_state[f'recipe_selector_{day}'].lower() 
-        for day in DAYS 
-        if st.session_state[f'recipe_selector_{day}'] is not None
-    ]
-
-    if selected_recipes:
-            st.header('Shopping List')
-            items = build_list(selected_recipes)
-            
-            clean_list = "\n".join(items.tolist())
-            
-            st.code(clean_list, language=None)
+    if selections:
+        st.header('Shopping List')
+        items = build_list([s.lower() for s in selections])
+        
+        clean_list = "\n".join(items.tolist())
+        
+        st.code(clean_list, language=None)
     else:
         st.warning("Please select at least one recipe first!")
