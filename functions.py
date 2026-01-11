@@ -210,3 +210,11 @@ def confirm_dialog(name, link, ingredients, mode):
     if col2.button('Cancel'):
         reset_session_state(mode)
         st.rerun()
+
+def reset_session_state(mode):
+    if mode == 'add':
+        print()
+    if mode == 'edit':
+        print()
+    if mode == 'delete':
+        print()
