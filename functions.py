@@ -113,6 +113,8 @@ def build_ingredient_selector(mode: str) -> True:
         st.session_state.permanent_selections = []
     if 'ingredient_list' not in st.session_state:
         st.session_state.ingredient_list = get_all_ingredients()
+    if 'ready_to_save' not in st.session_state:
+        st.session_state.ready_to_save = False
 
     def sync_selections():
         st.session_state.permanent_selections = st.session_state[f'ingred_ms_{mode}']
@@ -132,7 +134,7 @@ def build_ingredient_selector(mode: str) -> True:
     )
 
     with st.popover('Add New Ingredient'):
-            with st.form('add_form', clear_on_submit=True):
+            with st.form(f'add_form_{mode}', clear_on_submit=True):
                 new_ingred = st.text_input('Enter new ingredient name:')
                 submitted = st.form_submit_button('Confirm Add')
                 
@@ -141,7 +143,7 @@ def build_ingredient_selector(mode: str) -> True:
                         st.session_state.ingredient_list.append(new_ingred)
                         st.session_state.permanent_selections.append(new_ingred)
                         st.success('New ingredient added!')
-                        time.sleep(1)
+                        time.sleep(0.5)
                         st.rerun()
                     elif not new_ingred:
                         st.error('Name is required!')
@@ -152,19 +154,19 @@ def build_ingredient_selector(mode: str) -> True:
         st.write(f'- {ingred}')
 
     if st.session_state.permanent_selections:
-        st.button('Clear Selections', key='clear_btn', on_click=clear_all)
+        st.button('Clear Selections', key=f'clear_btn_{mode}', on_click=clear_all)
 
     if st.button('Save Recipe', key=f'save_btn_{mode}'):
         if not st.session_state.permanent_selections:
             st.error('Please provide ingredients!')
         else:
-            return True
+            st.session_state.ready_to_save = True
 
-def build_authenticator(mode) -> bool:
+def build_authenticator() -> bool:
         st.info('Authentication required to modify the database.')
-        pwd = st.text_input('Enter Database Password:', type='password', key=f'pwd_field_{mode}')
+        pwd = st.text_input('Enter Database Password:', type='password', key='pwd_field')
 
-        if st.button('Cancel', key=f'cancel_btn_{mode}'):
+        if st.button('Cancel', key='cancel_btn'):
             st.session_state.ready_to_save = False
             st.session_state.ready_to_del = False
             st.rerun()
@@ -175,7 +177,7 @@ def build_authenticator(mode) -> bool:
             st.error('Incorrect Password')
             return False
         
-def build_recipe_selector(mode:str):
+def build_recipe_selector(mode: str):
     name = st.selectbox(
         'Select Existing Recipe:',
         options=get_all_recipes(),
