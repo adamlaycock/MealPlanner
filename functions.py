@@ -1,6 +1,7 @@
 import streamlit as st
 import sqlite3
 import time
+import pandas as pd
 
 def find_recipes(ingredients: list):
     conn = sqlite3.connect('meal_planner.db')
@@ -17,7 +18,7 @@ def find_recipes(ingredients: list):
     """
 
     params = ingredients + [len(ingredients)]
-    res = [row[0] for row in cur.execute(query, params).fetchall()]
+    res = [row[0].title() for row in cur.execute(query, params).fetchall()]
 
     conn.close()
 

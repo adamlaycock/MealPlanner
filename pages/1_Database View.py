@@ -18,4 +18,13 @@ st.header('Find Recipes')
 
 recipes = build_ingredient_selector('find')
 
-st.write(recipes)
+if recipes and st.session_state.search_btn_find:
+    clean_recipes = "\n".join(recipes)
+    st.code(
+        clean_recipes,
+        language=None
+    )
+elif st.session_state.search_btn_find:
+    st.code(
+        'No Recipes Found'
+    )
