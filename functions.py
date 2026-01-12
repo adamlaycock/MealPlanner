@@ -253,5 +253,6 @@ def build_recipe_df() -> pd.DataFrame:
     """
 
     df = conn.query(query, ttl='5m')
+    df['name'] = df['name'].str.title()
     
     return df
