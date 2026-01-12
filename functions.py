@@ -256,3 +256,19 @@ def reset_session_state():
     st.session_state.name_input_edit = None
     st.session_state.name_input_delete = None
     st.session_state.permanent_selections = []
+
+def build_recipe_df() -> pd.DataFrame:
+    conn = sqlite3.connect('meal_planner.db')
+    cur = conn.cursor()
+    cur.execute("PRAGMA foreign_keys = ON;")
+
+    res = pd.DataFrame(
+        cur.execute("""
+            SELECT name, link FROM recipes
+        """).fetchall()
+    )
+    res[0] = res[0].str.title()
+
+    conn.close()
+    
+    return res

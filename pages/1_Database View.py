@@ -4,14 +4,14 @@ from functions import *
 st.title('Database View')
 st.header('Stored Recipes')
 
-# st.dataframe(
-#     st.session_state.recipes_df, 
-#     column_config={
-#         1: 'Name',
-#         2: 'Link'
-#     },
-#     hide_index=True
-# )
+st.dataframe(
+    build_recipe_df(), 
+    column_config={
+        1: 'Name',
+        2: 'Link'
+    },
+    hide_index=True
+)
 
 st.header('Find Recipes')
 
