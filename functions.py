@@ -179,10 +179,7 @@ def build_authenticator() -> bool:
         st.info('Authentication required to modify the database.')
         pwd = st.text_input('Enter Database Password:', type='password', key='pwd_field')
 
-        if st.button('Cancel', key='cancel_btn'):
-            st.session_state.ready_to_save = False
-            st.session_state.ready_to_del = False
-            st.rerun()
+        st.button('Cancel', key='cancel_btn', on_click=reset_session_state)
         
         if pwd == st.secrets['db_pwd']:
             return True
@@ -249,10 +246,6 @@ def build_list(names: list):
     
     return shopping_list
 
-def reset_session_state(mode):
-    if mode == 'add':
-        print()
-    if mode == 'edit':
-        print()
-    if mode == 'delete':
-        print()
+def reset_session_state():
+    st.session_state.ready_to_save = False
+    st.session_state.ready_to_del = False
