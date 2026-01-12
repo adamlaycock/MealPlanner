@@ -2,110 +2,102 @@ import streamlit as st
 import sqlite3
 import time
 import pandas as pd
+from sqlalchemy import text
 
 def find_recipes(ingredients: list):
-    conn = sqlite3.connect('meal_planner.db')
-    cur = conn.cursor()
-    cur.execute("PRAGMA foreign_keys = ON;")
+    conn = st.connection('postgresql', type='sql')
 
-    placeholders = ', '.join(['?'] * len(ingredients))
+    params = {f"ing{i}": ing.lower() for i, ing in enumerate(ingredients)}
+    params["required_count"] = len(ingredients)
+
+    placeholders = ', '.join([f":{key}" for key in params.keys() if key.startswith("ing")])
+
     query = f"""
             SELECT recipes.name FROM recipes
             JOIN ingredients ON recipes.id = ingredients.recipe_id
             WHERE ingredients.ingredient IN ({placeholders})
             GROUP BY recipes.name
-            HAVING COUNT(DISTINCT ingredients.ingredient) = ?
+            HAVING COUNT(DISTINCT ingredients.ingredient) = :required_count
     """
 
-    params = ingredients + [len(ingredients)]
-    res = [row[0].title() for row in cur.execute(query, params).fetchall()]
+    df = conn.query(query, params=params, ttl='5m')
 
-    conn.close()
-
-    return res
+    return [name.title() for name in df['name'].tolist()]
 
 def get_all_recipes() -> list:
-    conn = sqlite3.connect('meal_planner.db')
-    cur = conn.cursor()
-    cur.execute('PRAGMA foreign_keys = ON;')
+    conn = st.connection('postgresql', type='sql')
 
-    recipes = cur.execute("""
+    query = """
         SELECT name FROM recipes
-    """).fetchall()
-
-    conn.close()
+    """
+    df = conn.query(query)
     
-    return [row[0].title() for row in recipes]
+    return [name.title() for name in df['name'].tolist()]
 
 def get_all_ingredients() -> list:
-    conn = sqlite3.connect('meal_planner.db')
-    cur = conn.cursor()
-    cur.execute('PRAGMA foreign_keys = ON;')
+    conn = st.connection('postgresql', type='sql')
 
-    ingredients = cur.execute("""
+    query = """
         SELECT DISTINCT ingredient FROM ingredients
-    """).fetchall()
+    """
 
-    conn.close()
-    
-    return [row[0].title() for row in ingredients]
+    df = conn.query(query, ttl='5m')
+
+    return [ing.title() for ing in df['ingredient'].tolist()]
 
 def get_recipe_info(recipe: str) -> tuple[list, str]:
-    conn = sqlite3.connect('meal_planner.db')
-    cur = conn.cursor()
-    cur.execute('PRAGMA foreign_keys = ON;')
+    conn = st.connection('postgresql', type='sql')
 
-    res = cur.execute(
-        """
+    query = """
         SELECT ingredients.ingredient, recipes.link 
         FROM ingredients
         JOIN recipes ON ingredients.recipe_id = recipes.id
-        WHERE recipes.name = ?
-        """, 
-        (recipe,)
-    ).fetchall()
+        WHERE recipes.name = :recipe_name
+    """
 
-    conn.close()
+    df = conn.query(query, params={"recipe_name": recipe.lower()}, ttl='5m')
     
-    if res:
-        return [row[0].title() for row in res], res[0][1]
+    if not df.empty:
+        return [ing.title() for ing in df['ingredient'].to_list()], df['link'].iloc[0]
     else:
         return [], None
 
 def add_to_db(name, link, ingredients) -> True:
-    conn = sqlite3.connect('meal_planner.db')
-    cur = conn.cursor()
-    cur.execute('PRAGMA foreign_keys = ON;')
+    conn = st.connection('postgresql', type='sql')
     
-    cur.execute(
-        'INSERT INTO recipes (name, link) VALUES (?, ?)', 
-        (name.lower(), link)
-    )
-    new_id = cur.lastrowid
+    with conn.session as s:
+        recipe_query = text("""
+            INSERT INTO recipes (name, link) 
+            VALUES (:name, :link) 
+            RETURNING id        
+        """)
+
+        result = s.execute(recipe_query, {"name": name.lower(), "link": link})
+        new_id = result.fetchone()[0]
     
-    ingredient_data = [(i.lower(), new_id) for i in ingredients]
-    cur.executemany(
-        'INSERT INTO ingredients (ingredient, recipe_id) VALUES (?, ?)', 
-        ingredient_data
-    )
+        ing_query = text("""
+            INSERT INTO ingredients (ingredient, recipe_id) 
+            VALUES (:ingredient, :recipe_id)
+        """)
+
+        for i in ingredients:
+            s.execute(ing_query, {"ingredient": i.lower(), "recipe_id": new_id})
     
-    conn.commit()
-    conn.close()
+        s.commit()
 
     return True
 
 def remove_from_db(name) -> True:
-    conn = sqlite3.connect('meal_planner.db')
-    cur = conn.cursor()
-    cur.execute('PRAGMA foreign_keys = ON;')
+    conn = st.connection('postgresql', type='sql')
 
-    cur.execute(
-        'DELETE FROM recipes WHERE name=?', 
-        (name.lower(),)
-    )
+    with conn.session as s:
+        query = text("""
+            DELETE FROM recipes WHERE name = :name         
+        """)
 
-    conn.commit()
-    conn.close()
+        s.execute(query, {"name": name.lower()})
+
+        s.commit()
 
     return True
 
@@ -146,7 +138,6 @@ def build_ingredient_selector(mode: str) -> True:
                             st.session_state.ingredient_list.append(new_ingred)
                             st.session_state.permanent_selections.append(new_ingred)
                             st.success('New ingredient added!')
-                            time.sleep(0.5)
                             st.rerun()
                         elif not new_ingred:
                             st.error('Name is required!')
@@ -215,6 +206,7 @@ def confirm_dialog(name, link, ingredients, mode):
         st.success('Action successful!')
         time.sleep(1)
         reset_session_state()
+        st.cache_data.clear()
         st.rerun()
             
     if col2.button('Cancel'):
@@ -222,27 +214,24 @@ def confirm_dialog(name, link, ingredients, mode):
         st.rerun()
 
 def build_list(names: list):
-    conn = sqlite3.connect('meal_planner.db')
-    cur = conn.cursor()
-    cur.execute("PRAGMA foreign_keys = ON;")
+    conn = st.connection('postgresql', type='sql')
 
-    placeholders = ', '.join(['?'] * len(names))
+    params = {f"name{i}": name for i, name in enumerate(names)}
+    placeholders = ', '.join([f":{key}" for key in params.keys()])
+
     query = f"""
         SELECT ingredients.ingredient FROM recipes
         JOIN ingredients ON recipes.id = ingredients.recipe_id
         WHERE name IN ({placeholders})
     """
+
     res = pd.DataFrame(
-        pd.DataFrame(
-            cur.execute(query, names)
-        ).value_counts()
-    ).reset_index().sort_values(by=0)
+        conn.query(query, params=params, ttl='5m').value_counts()
+    ).reset_index().sort_values(by='ingredient')
 
     shopping_list = (
-        res[0].str.title() + ' x' + res['count'].astype(str)
+        res['ingredient'].str.title() + ' x' + res['count'].astype(str)
     ).str.replace('x1', '')
-
-    conn.close()
     
     return shopping_list
 
@@ -258,17 +247,12 @@ def reset_session_state():
     st.session_state.permanent_selections = []
 
 def build_recipe_df() -> pd.DataFrame:
-    conn = sqlite3.connect('meal_planner.db')
-    cur = conn.cursor()
-    cur.execute("PRAGMA foreign_keys = ON;")
+    conn = st.connection('postgresql', type='sql')
 
-    res = pd.DataFrame(
-        cur.execute("""
-            SELECT name, link FROM recipes
-        """).fetchall()
-    )
-    res[0] = res[0].str.title()
+    query = """
+        SELECT name, link FROM recipes
+    """
 
-    conn.close()
+    df = conn.query(query, ttl='5m')
     
-    return res
+    return df
