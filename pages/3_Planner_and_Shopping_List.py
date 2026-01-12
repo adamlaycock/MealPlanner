@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 from functions import *
 
 st.title('Meal Planner & Shopping List')

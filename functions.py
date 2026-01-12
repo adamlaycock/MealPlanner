@@ -1,5 +1,4 @@
 import streamlit as st
-import sqlite3
 import time
 import pandas as pd
 from sqlalchemy import text
