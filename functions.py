@@ -123,6 +123,7 @@ def build_ingredient_selector(mode: str) -> True:
         st.session_state.permanent_selections = []
         st.session_state.ingred_ms_add = []
         st.session_state.ingred_ms_edit = []
+        st.session_state.ingred_ms_find = []
         st.session_state.ready_to_save = False
 
     st.multiselect(
@@ -133,22 +134,23 @@ def build_ingredient_selector(mode: str) -> True:
         on_change=sync_selections
     )
 
-    with st.popover('Add New Ingredient'):
-            with st.form(f'add_form_{mode}', clear_on_submit=True):
-                new_ingred = st.text_input('Enter new ingredient name:')
-                submitted = st.form_submit_button('Confirm Add')
-                
-                if submitted:
-                    if new_ingred and new_ingred.title() not in st.session_state.ingredient_list:
-                        st.session_state.ingredient_list.append(new_ingred)
-                        st.session_state.permanent_selections.append(new_ingred)
-                        st.success('New ingredient added!')
-                        time.sleep(0.5)
-                        st.rerun()
-                    elif not new_ingred:
-                        st.error('Name is required!')
-                    else:
-                        st.error('Ingredient already exists!')
+    if mode != 'find':
+        with st.popover('Add New Ingredient'):
+                with st.form(f'add_form_{mode}', clear_on_submit=True):
+                    new_ingred = st.text_input('Enter new ingredient name:')
+                    submitted = st.form_submit_button('Confirm Add')
+                    
+                    if submitted:
+                        if new_ingred and new_ingred.title() not in st.session_state.ingredient_list:
+                            st.session_state.ingredient_list.append(new_ingred)
+                            st.session_state.permanent_selections.append(new_ingred)
+                            st.success('New ingredient added!')
+                            time.sleep(0.5)
+                            st.rerun()
+                        elif not new_ingred:
+                            st.error('Name is required!')
+                        else:
+                            st.error('Ingredient already exists!')
 
     for ingred in st.session_state.permanent_selections:
         st.write(f'- {ingred}')
@@ -156,11 +158,21 @@ def build_ingredient_selector(mode: str) -> True:
     if st.session_state.permanent_selections:
         st.button('Clear Selections', key=f'clear_btn_{mode}', on_click=clear_all)
 
-    if st.button('Save Recipe', key=f'save_btn_{mode}'):
-        if not st.session_state.permanent_selections:
-            st.error('Please provide ingredients!')
-        else:
-            st.session_state.ready_to_save = True
+    if mode != 'find':
+        if st.button('Save Recipe', key=f'save_btn_{mode}'):
+            if not st.session_state.permanent_selections:
+                st.error('Please provide ingredients!')
+            else:
+                st.session_state.ready_to_save = True
+    else:
+        if st.button('Search', key=f'search_btn_{mode}'):
+            if not st.session_state.permanent_selections:
+                st.error('Please provide ingredients!')
+            else:
+                return find_recipes(
+                    [i.lower() for i in st.session_state.permanent_selections]
+                )
+
 
 def build_authenticator() -> bool:
         st.info('Authentication required to modify the database.')
