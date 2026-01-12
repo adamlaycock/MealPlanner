@@ -224,6 +224,31 @@ def confirm_dialog(name, link, ingredients, mode):
         reset_session_state(mode)
         st.rerun()
 
+def build_list(names: list):
+    conn = sqlite3.connect('meal_planner.db')
+    cur = conn.cursor()
+    cur.execute("PRAGMA foreign_keys = ON;")
+
+    placeholders = ', '.join(['?'] * len(names))
+    query = f"""
+        SELECT ingredients.ingredient FROM recipes
+        JOIN ingredients ON recipes.id = ingredients.recipe_id
+        WHERE name IN ({placeholders})
+    """
+    res = pd.DataFrame(
+        pd.DataFrame(
+            cur.execute(query, names)
+        ).value_counts()
+    ).reset_index().sort_values(by=0)
+
+    shopping_list = (
+        res[0].str.title() + ' x' + res['count'].astype(str)
+    ).str.replace('x1', '')
+
+    conn.close()
+    
+    return shopping_list
+
 def reset_session_state(mode):
     if mode == 'add':
         print()
