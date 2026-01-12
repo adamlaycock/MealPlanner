@@ -1,5 +1,4 @@
 import streamlit as st
-import sqlite3
 from functions import *
 
 st.title('Database View')

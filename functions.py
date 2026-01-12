@@ -214,11 +214,11 @@ def confirm_dialog(name, link, ingredients, mode):
             remove_from_db(name)
         st.success('Action successful!')
         time.sleep(1)
-        reset_session_state(mode)
+        reset_session_state()
         st.rerun()
             
     if col2.button('Cancel'):
-        reset_session_state(mode)
+        reset_session_state()
         st.rerun()
 
 def build_list(names: list):
@@ -247,5 +247,12 @@ def build_list(names: list):
     return shopping_list
 
 def reset_session_state():
+    st.session_state.name_input_add = ''
+    st.session_state.link_input_add = ''
+    st.session_state.ingred_ms_add = []
+    st.session_state.ingred_ms_edit = []
     st.session_state.ready_to_save = False
     st.session_state.ready_to_del = False
+    st.session_state.name_input_edit = None
+    st.session_state.name_input_delete = None
+    st.session_state.permanent_selections = []

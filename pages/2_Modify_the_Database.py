@@ -1,6 +1,4 @@
 import streamlit as st
-import sqlite3
-import time
 from functions import *
         
 st.title('Add, Edit, or Delete Recipes')
@@ -30,7 +28,6 @@ with tab1:
 with tab2:
     if 'ready_to_del' not in st.session_state:
         st.session_state.ready_to_del = False
-
 
     st.header('Edit Recipe')
     name = build_recipe_selector('edit')
